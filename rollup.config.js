@@ -1,51 +1,55 @@
 import resolve from "@rollup/plugin-node-resolve";
+import replace from "@rollup/plugin-replace";
 import commonjs from "@rollup/plugin-commonjs";
 import typescript from "@rollup/plugin-typescript";
 import postcss from "rollup-plugin-postcss";
 import peerDepsExternal from "rollup-plugin-peer-deps-external";
+import { terser } from "rollup-plugin-terser";
+import generatePackageJson from "rollup-plugin-generate-package-json";
 // import dts from "rollup-plugin-dts";
 
-// const packageJson = require("./package.json");
+const packageJson = require("./package.json");
 
 export default [
   {
-    input: "./src/index.ts",
+    input: "src/index.ts",
     output: [
-      // {
-      //   file: packageJson.main,
-      //   format: "cjs",
-      //   sourcemap: true,
-      //   // exports: "named",
-      // },
       {
-        file: "dist/index.js",
+        file: "dist/index.esm.js",
+        exports: "named",
         format: "esm",
-        sourcemap: true,
-        // exports: "named",
+        banner: `'use client';`,
+      },
+      {
+        file: "dist/index.cjs.js",
+        exports: "named",
+        format: "cjs",
+        banner: `'use client';`,
       },
     ],
+    external: [/node_modules/],
     plugins: [
-      peerDepsExternal({
-        includeDependencies: true,
+      replace({
+        preventAssignment: true,
+        __IS_DEV__: process.env.NODE_ENV === "development",
       }),
-      postcss({
-        config: {
-          path: "./postcss.config.js",
-        },
-        extensions: [".scss"],
-        minimize: true,
-        inject: {
-          insertAt: "top",
-        },
-      }),
-      resolve({
-        browser: true,
-      }),
+      resolve(),
       commonjs(),
       typescript({
         tsconfig: "./tsconfig.json",
-        sourceMap: true,
       }),
+
+      // generatePackageJson({
+      //   baseContents: {
+      //     name: `test-button`,
+      //     private: true,
+      //     main: "./index.cjs.js",
+      //     module: "./index.esm.js",
+      //     types: "./index.d.ts",
+      //     peerDependencies: packageJson.peerDependencies,
+      //   },
+      //   outputFolder: `dist`,
+      // }),
     ],
   },
 ];
